@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Databricks DABs
+.databricks/
+.bundle/
+
 # Distribution / packaging
 .Python
 build/

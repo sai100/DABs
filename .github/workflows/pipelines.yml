@@ -1,0 +1,47 @@
+# Pipelines for DAB
+
+name: Deploy DAB to Databricks
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: "Deployment Environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - qa
+      catalog:
+        description: "Target Catalog to deploy into"
+        required: true
+        type: string
+        default: ""
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.target_env }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Install Databricks CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/databricks/setup-cli/main/install.sh | sh
+      
+      - name: Configure Databricks CLI
+        run: |
+          databricks configure --host $DATABRICKS_HOST --token $DATABRICKS_TOKEN
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_PAT }}
+      
+      - name: Databricks Bundle Validate
+        run: databricks bundle validate --target ${{ github.event.inputs.target_env }} --var catalog=${{ github.event.inputs.catalog }}
+      
+      - name: Databricks Bundle Summary
+        run: databricks bundle summary --target ${{ github.event.inputs.target_env }} --var catalog=${{ github.event.inputs.catalog }}
+      
+      - name: Databricks Bundle Deploy
+        run: databricks bundle deploy --target ${{ github.event.inputs.target_env }} --var catalog=${{ github.event.inputs.catalog }}
